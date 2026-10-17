@@ -3,7 +3,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr
 from io import StringIO
 
 from extract_zip_files import extract_zip, is_safe_member
@@ -19,9 +19,11 @@ class TestZipExtraction(unittest.TestCase):
 
     def create_zip(self, name, members):
         zip_path = self.base_path / name
+
         with zipfile.ZipFile(zip_path, "w") as archive:
             for filename, content in members.items():
                 archive.writestr(filename, content)
+
         return zip_path
 
     def test_extracts_valid_zip(self):
@@ -33,11 +35,30 @@ class TestZipExtraction(unittest.TestCase):
         result = extract_zip(zip_path)
 
         extracted_file = self.base_path / "sample" / "hello.txt"
+
         self.assertEqual(result, 0)
         self.assertTrue(extracted_file.exists())
         self.assertEqual(
             extracted_file.read_text(encoding="utf-8"),
             "ZIP extraction works!",
+        )
+
+    def test_extracts_to_custom_output_folder(self):
+        zip_path = self.create_zip(
+            "custom_sample.zip",
+            {"hello.txt": "Custom destination works!"},
+        )
+        output_dir = self.base_path / "my_custom_folder"
+
+        result = extract_zip(zip_path, output_dir)
+
+        extracted_file = output_dir / "hello.txt"
+
+        self.assertEqual(result, 0)
+        self.assertTrue(extracted_file.exists())
+        self.assertEqual(
+            extracted_file.read_text(encoding="utf-8"),
+            "Custom destination works!",
         )
 
     def test_missing_file_returns_error(self):

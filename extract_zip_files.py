@@ -13,10 +13,13 @@ def is_safe_member(member_name, destination):
     posix_path = PurePosixPath(member_name)
     windows_path = PureWindowsPath(member_name)
 
-    if posix_path.is_absolute() or windows_path.is_absolute():
-        return False
-
-    if windows_path.drive or ".." in posix_path.parts:
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or windows_path.drive
+        or ".." in posix_path.parts
+        or ".." in windows_path.parts
+    ):
         return False
 
     destination = destination.resolve()
@@ -30,8 +33,8 @@ def is_safe_member(member_name, destination):
     return True
 
 
-def extract_zip(zip_path):
-    """Validate and safely extract a ZIP archive into a sibling folder."""
+def extract_zip(zip_path, output_dir=None):
+    """Validate and safely extract a ZIP archive into a destination folder."""
     archive_path = Path(zip_path).expanduser()
 
     if not archive_path.exists():
@@ -46,7 +49,11 @@ def extract_zip(zip_path):
         print("Error: The input file must have a .zip extension.", file=sys.stderr)
         return 1
 
-    destination = archive_path.parent / archive_path.stem
+    destination = (
+        Path(output_dir).expanduser()
+        if output_dir is not None
+        else archive_path.parent / archive_path.stem
+    )
 
     try:
         with zipfile.ZipFile(archive_path, "r") as archive:
@@ -83,7 +90,7 @@ def extract_zip(zip_path):
         print(f"Error extracting archive: {error}", file=sys.stderr)
         return 1
 
-    print(f"Extracted successfully to: {destination}")
+    print(f"Extracted successfully to: {destination.resolve()}")
     return 0
 
 
@@ -97,9 +104,14 @@ def main():
         required=True,
         help="Path to the ZIP file to extract",
     )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Destination folder (defaults to a folder named after the ZIP file)",
+    )
 
     args = parser.parse_args()
-    return extract_zip(args.zippedfile)
+    return extract_zip(args.zippedfile, args.output)
 
 
 if __name__ == "__main__":
