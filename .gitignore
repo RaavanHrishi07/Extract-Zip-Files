@@ -1,0 +1,15 @@
+```gitignore
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.log
+extract_zip_files.backup.py
+
+# Temporary test artifacts
+test_archive.zip
+test_archive/
+unsafe_test.zip
+windows_unsafe_test.zip
+```
